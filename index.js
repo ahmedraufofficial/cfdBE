@@ -61,6 +61,16 @@ app.get('/auctions', async (req, res) => {
     }
 });
 
+app.put('/edit/auction/:id', async (req, res) => {
+    const update = req.body
+    try {
+        let auction = await AuctionsModel.findOneAndUpdate({_id: req.params.id}, update, {new: true})
+        res.send({status: "200", response: auction})
+    } catch(err) {
+        res.send({status: "500", error: err})
+    };
+});
+
 app.post("/upload_images", upload.array("files",8), uploadFiles);
 async function uploadFiles(req, res) {
     const update = {Images: req.files.map((file) => file.filename)}
