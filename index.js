@@ -15,7 +15,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const storage = multer.diskStorage({
-    destination: path.join(__dirname, '../admin/public/', 'uploads'),
+    destination: path.join(__dirname, '../auctionFrontend/public/', 'uploads'),
     filename: function (req, file, cb) {  
         // null as first argument means no error
         cb(null, Date.now() + '-' + file.originalname )  
@@ -42,6 +42,7 @@ app.post('/add/auction', async (req, res) => {
     const vehicle = await VehiclesModel.findOne({_id: req.body.x.Vehicle_Id})
     const response = req.body.x
     response.Vehicle_Title = vehicle.Vehicle_Manufacturer + " " + vehicle.Model + "(" + vehicle.Manufacturing_Year + ")" 
+    response.Current_Bid = response.Auction_Opening_Price
     const auction = new AuctionsModel(response);
     try {
         await auction.save();
@@ -64,7 +65,18 @@ app.get('/auctions', async (req, res) => {
 app.put('/edit/auction/:id', async (req, res) => {
     const update = req.body
     try {
+        let check = await AuctionsModel.findOne({_id: req.params.id});
+        if (check.Current_Bid > update.Current_Bid) { update.Current_Bid = check.Current_Bid }
         let auction = await AuctionsModel.findOneAndUpdate({_id: req.params.id}, update, {new: true})
+        res.send({status: "200", response: auction})
+    } catch(err) {
+        res.send({status: "500", error: err})
+    };
+});
+
+app.get('/get/auction/:id', async (req, res) => {
+    try {
+        let auction = await AuctionsModel.findOne({_id: req.params.id});
         res.send({status: "200", response: auction})
     } catch(err) {
         res.send({status: "500", error: err})

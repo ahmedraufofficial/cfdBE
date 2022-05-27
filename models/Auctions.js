@@ -16,6 +16,7 @@ const AuctionsSchema = new mongoose.Schema({
     Product_Description: String,
     Currency: String,
     Auction_Opening_Price: String,
+    Current_Bid: String,
     Set_Reserve_Price: String,
     Set_Incremental_Price: String,
     First_Best_Offer: String,
@@ -33,6 +34,7 @@ const AuctionsSchema = new mongoose.Schema({
     Incremental_Time: String,
     Edit_After_Auction: String,
     Vehicle_Title: String,
+    Bids: Array
 });
 
 const Auction = mongoose.model("auctions", AuctionsSchema);
