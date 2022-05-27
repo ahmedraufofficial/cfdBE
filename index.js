@@ -43,6 +43,7 @@ app.post('/add/auction', async (req, res) => {
     const response = req.body.x
     response.Vehicle_Title = vehicle.Vehicle_Manufacturer + " " + vehicle.Model + "(" + vehicle.Manufacturing_Year + ")" 
     response.Current_Bid = response.Auction_Opening_Price
+    response.Bids = []
     const auction = new AuctionsModel(response);
     try {
         await auction.save();
@@ -66,6 +67,8 @@ app.put('/edit/auction/:id', async (req, res) => {
     const update = req.body
     try {
         let check = await AuctionsModel.findOne({_id: req.params.id});
+        check.Bids.push(update.Bids)
+        update.Bids = check.Bids
         if (check.Current_Bid > update.Current_Bid) { update.Current_Bid = check.Current_Bid }
         let auction = await AuctionsModel.findOneAndUpdate({_id: req.params.id}, update, {new: true})
         res.send({status: "200", response: auction})
