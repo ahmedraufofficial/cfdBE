@@ -1,6 +1,7 @@
+require("dotenv").config();
 const express = require('express');
-const app = express();
 const cors = require('cors');
+const app = express();
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const multer = require('multer');
@@ -114,7 +115,7 @@ app.put('/edit/vehicle/:id', async (req, res) => {
     };
 });
 
-app.get('/vehicles', async (req, res) => {
+app.get('/vehicles', cors(), async (req, res) => {
     try {
         const vehicles = await VehiclesModel.find()
         return res.json({data: vehicles})
@@ -171,6 +172,14 @@ app.post('/api/createuser', async (req, res) => {
     }
 });
 
-app.listen(3001, () => {
+app.get('/', async (req, res) => {
+    try {
+        return res.json({status: "running"})
+    } catch (err) {
+        res.json({ status: "error"})
+    }
+});
+
+app.listen(8080, () => {
     console.log('Server running')
 });
