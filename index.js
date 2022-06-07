@@ -304,6 +304,6 @@ app.get('/', async (req, res) => {
     }
 });
 
-app.listen(8080, () => {
+app.listen(3000, () => {
     console.log('Server running')
 });
