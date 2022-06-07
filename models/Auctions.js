@@ -27,6 +27,7 @@ const AuctionsSchema = new mongoose.Schema({
     Total_Bidding_Duration: String,
     Allow_Auto_Bidding: String,
     Stop_Auto_Bidding_Condition: String,
+    Recent_Auto_Bid: Date,
     Allow_Negotiation: String,
     Negotiation_Duration: String,
     Negotiation_Mode: String,
@@ -34,7 +35,8 @@ const AuctionsSchema = new mongoose.Schema({
     Incremental_Time: String,
     Edit_After_Auction: String,
     Vehicle_Title: String,
-    Bids: Array
+    Bids: Array,
+    Status: String,
 });
 
 const Auction = mongoose.model("auctions", AuctionsSchema);

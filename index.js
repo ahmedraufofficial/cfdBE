@@ -5,18 +5,20 @@ const app = express();
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const multer = require('multer');
-
+const moment = require('moment');
 const mongoose = require('mongoose');
 const VehiclesModel = require('./models/Vehicles');
+const NegotiationsModel = require('./models/Negotiations');
 const AuctionsModel = require('./models/Auctions');
 const AdminModel = require('./models/Admin');
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/images', express.static('images'));
 
 const storage = multer.diskStorage({
-    destination: path.join(__dirname, '../auctionFrontend/public/', 'uploads'),
+    destination: path.join(__dirname, './', 'images'),
     filename: function (req, file, cb) {  
         // null as first argument means no error
         cb(null, Date.now() + '-' + file.originalname )  
@@ -34,9 +36,99 @@ const upload = multer({
         }
     }
 });
-
+ 
 mongoose.connect('mongodb+srv://carology:0Y8Yey4V8suX4aWZ@carology.czjjg.mongodb.net/carology?retryWrites=true&w=majority', {
     useNewUrlParser: true,
+});
+
+app.post('/add/negotiation', async (req, res) => {
+    const auction = await NegotiationsModel.findOne({Auction_Id: req.body.Auction_Id})
+    if (!auction) {
+        const negotiation = new NegotiationsModel(req.body);
+        try {
+            await negotiation.save();
+            res.send({status: "200"})
+        } catch(err) {
+            res.send({status: "500", error: err})
+        };  
+    } else {
+        res.send({status: "500", error: "Something went wrong"})
+    }
+});
+
+app.get('/negotiations', async (req, res) => {
+    try {
+        const negotiations = await NegotiationsModel.find()
+        return res.json({data: negotiations})
+    } catch (err) {
+        console.log(err)
+        res.json({ status: "error", error: "Invalid Token"})
+    }
+});
+
+app.get('/prenegotiations', async (req, res) => {
+    const auctions = await AuctionsModel.find({"Status": "Pre-Negotiation"})
+    for (let i = 0; i < auctions.length; i++) {
+        const auction = auctions[i]
+        if (new Date(moment(auction?.Auction_Start_Date).format("YYYY-MM-DD")+" "+auction?.Auction_Start_Time+":00").getTime() + 60000 * parseInt(auction.Total_Bidding_Duration) <= new Date().getTime()) {
+            const values = {
+                Auction_Id: auction?._id,
+                Auction_Type: auction?.Auction_Type,
+                Product_Description: auction?.Product_Description,
+                Currency: auction?.Currency,
+                Current_Bid: auction?.Current_Bid,
+                Negotiation_Duration: auction?.Negotiation_Duration,
+                Negotiation_Mode: auction?.Negotiation_Mode,
+                Set_Incremental_Price: auction?.Set_Incremental_Price,
+                Vehicle_Title: auction?.Vehicle_Title,
+                Status: auction?.Status,
+                Bids: auction?.Bids
+            }
+        if (auction?.Negotiation_Mode === "automatic") {
+            values.Buy_Now_Price = auction?.Current_Bid;
+            values.Negotiation_Start_Date = new Date();
+            }
+            const negotiation = new NegotiationsModel(values);
+            try {
+                await negotiation.save()
+                await AuctionsModel.findOneAndUpdate({_id: auction?._id}, {Status: "Negotiation"}, {new: true})
+ 
+            } catch (err) {
+                return res.json({failed: err})
+            }
+        }    
+    }
+    const negotiations = await NegotiationsModel.find()
+    return res.json({data: negotiations})
+})
+
+app.put('/edit/negotiation/:id', async (req, res) => {
+    const update = req.body
+    try {
+        let negotiation = await NegotiationsModel.findOneAndUpdate({_id: req.params.id}, update, {new: true})
+        res.send({status: "200", response: negotiation})
+    } catch(err) {
+        res.send({status: "500", error: err})
+    };
+});
+
+app.get('/negotiation/:id', async (req, res) => {
+    try {
+        let negotiation = await NegotiationsModel.findOne({_id: req.params.id});
+        res.send({status: "200", response: negotiation})
+    } catch(err) {
+        res.send({status: "500", error: err})
+    };
+});
+
+app.get('/invoices', async (req, res) => {
+    try {
+        const invoices = await NegotiationsModel.find({Status: "Post-Negotiation"}); 
+        return res.json({data: invoices})
+    } catch (err) {
+        console.log(err)
+        res.json({ status: "error", error: "Invalid Token"})
+    }
 });
 
 app.post('/add/auction', async (req, res) => {
@@ -45,6 +137,8 @@ app.post('/add/auction', async (req, res) => {
     response.Vehicle_Title = vehicle.Vehicle_Manufacturer + " " + vehicle.Model + "(" + vehicle.Manufacturing_Year + ")" 
     response.Current_Bid = response.Auction_Opening_Price
     response.Bids = []
+    response.Status = "Pre-Negotiation"
+    response.Recent_Auto_Bid = new Date()
     const auction = new AuctionsModel(response);
     try {
         await auction.save();
@@ -54,9 +148,28 @@ app.post('/add/auction', async (req, res) => {
     };  
 });
 
+async function autoBid(auctions){
+    auctions.map(async (auction)=>{
+        if (JSON.parse(auction?.Allow_Auto_Bidding) && 
+            (((new Date().getTime() - auction.Recent_Auto_Bid.getTime())/ 1000) / 60) > 2){
+            if ((parseInt(auction?.Current_Bid) < parseInt(auction[auction?.Stop_Auto_Bidding_Condition]||"100000000"))){
+                await AuctionsModel.findOneAndUpdate({_id: auction?._id}, {
+                    Current_Bid: (parseInt(auction?.Current_Bid) + parseInt(auction?.Set_Incremental_Price)).toString(),
+                    Recent_Auto_Bid: new Date()
+                }, {new: true})
+            } else {
+                await AuctionsModel.findOneAndUpdate({_id: auction?._id}, {
+                    Allow_Auto_Bidding: "false"
+                }, {new: true})
+            }
+        }
+    })
+}
+
 app.get('/auctions', async (req, res) => {
     try {
         const auctions = await AuctionsModel.find()
+        autoBid(auctions)
         return res.json({data: auctions})
     } catch (err) {
         console.log(err)
@@ -64,21 +177,34 @@ app.get('/auctions', async (req, res) => {
     }
 });
 
+async function setIncrementalPrice(auction){
+    if (JSON.parse(auction.Allow_Auction_Sniping)){
+        const initialTime = new Date(moment(auction?.Auction_Start_Date).format("YYYY-MM-DD")+" "+auction?.Auction_Start_Time+":00").getTime() + 60000 * parseInt(auction.Total_Bidding_Duration)
+        const currentTime = new Date().getTime();
+        const timeDiff = ((((initialTime - currentTime) / 1000) / 60) - 0.2).toString().split(".");
+        if (parseInt(timeDiff[0]) === 0 && parseInt(timeDiff[1]) > 0) {
+            const duration = parseInt(auction?.Total_Bidding_Duration) + parseInt(auction?.Incremental_Time);
+            await AuctionsModel.findOneAndUpdate({_id: auction?._id}, {
+                Total_Bidding_Duration: duration.toString(),
+            }, {new: true})
+        }
+    }
+}
+
 app.put('/edit/auction/:id', async (req, res) => {
     const update = req.body
     try {
         let check = await AuctionsModel.findOne({_id: req.params.id});
-        check.Bids.push(update.Bids)
-        update.Bids = check.Bids
         if (check.Current_Bid > update.Current_Bid) { update.Current_Bid = check.Current_Bid }
-        let auction = await AuctionsModel.findOneAndUpdate({_id: req.params.id}, update, {new: true})
+        const auction = await AuctionsModel.findOneAndUpdate({_id: req.params.id}, update, {new: true})
+        setIncrementalPrice(auction);
         res.send({status: "200", response: auction})
     } catch(err) {
         res.send({status: "500", error: err})
     };
 });
 
-app.get('/get/auction/:id', async (req, res) => {
+app.get('/auction/:id', async (req, res) => {
     try {
         let auction = await AuctionsModel.findOne({_id: req.params.id});
         res.send({status: "200", response: auction})
@@ -134,8 +260,6 @@ app.get('/vehicle/:id', async (req, res) => {
         res.json({ status: "error", error: "Invalid Token"})
     }
 });
-
-
 
 app.post('/api/auth', async (req, res) => {
     
