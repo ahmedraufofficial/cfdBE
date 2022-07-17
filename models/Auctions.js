@@ -37,6 +37,7 @@ const AuctionsSchema = new mongoose.Schema({
     Vehicle_Title: String,
     Bids: Array,
     Status: String,
+    Images: Array,
 });
 
 const Auction = mongoose.model("auctions", AuctionsSchema);

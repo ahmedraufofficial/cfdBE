@@ -12,6 +12,7 @@ const reqDate = {
 
 const NegotiationsSchema = new mongoose.Schema({
     Auction_Id: String,
+    Vehicle_Id: String,
     Auction_Type: String,
     Product_Description: String,
     Currency: String,
@@ -24,7 +25,8 @@ const NegotiationsSchema = new mongoose.Schema({
     Vehicle_Title: String,
     Set_Incremental_Price: String,
     Status: String,
-    Bids: Array
+    Bids: Array,
+    Images: Array,
 });
 
 const Negotiation = mongoose.model("negotiations", NegotiationsSchema);

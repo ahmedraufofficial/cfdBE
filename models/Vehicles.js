@@ -188,6 +188,8 @@ const VehiclesSchema = new mongoose.Schema({
     Car_Interior: CarInteriorSchema,
     General_Driving_Condition: GeneralDrivingConditionSchema,
     Technical_Condition: TechnicalConditionSchema,
+    Auction_Winner: String,
+    Status: String,
 });
 
 const Vehicle = mongoose.model("vehicles", VehiclesSchema);

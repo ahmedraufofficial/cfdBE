@@ -11,6 +11,8 @@ const VehiclesModel = require('./models/Vehicles');
 const NegotiationsModel = require('./models/Negotiations');
 const AuctionsModel = require('./models/Auctions');
 const AdminModel = require('./models/Admin');
+const UserModel = require('./models/Users');
+const { signup, login, isAuth } = require('./controllers/auth.js');
 
 app.use(cors());
 app.use(express.json());
@@ -74,6 +76,7 @@ app.get('/prenegotiations', async (req, res) => {
             const values = {
                 Auction_Id: auction?._id,
                 Auction_Type: auction?.Auction_Type,
+                Vehicle_Id: auction?.Vehicle_Id,
                 Product_Description: auction?.Product_Description,
                 Currency: auction?.Currency,
                 Current_Bid: auction?.Current_Bid,
@@ -82,20 +85,20 @@ app.get('/prenegotiations', async (req, res) => {
                 Set_Incremental_Price: auction?.Set_Incremental_Price,
                 Vehicle_Title: auction?.Vehicle_Title,
                 Status: auction?.Status,
-                Bids: auction?.Bids
+                Bids: auction?.Bids,
+                Images: auction?.Images
             }
         if (auction?.Negotiation_Mode === "automatic") {
             values.Buy_Now_Price = auction?.Current_Bid;
             values.Negotiation_Start_Date = new Date();
             }
-            const negotiation = new NegotiationsModel(values);
-            try {
-                await negotiation.save()
-                await AuctionsModel.findOneAndUpdate({_id: auction?._id}, {Status: "Negotiation"}, {new: true})
- 
-            } catch (err) {
-                return res.json({failed: err})
-            }
+        const negotiation = new NegotiationsModel(values);
+        try {
+            await negotiation.save()
+            await AuctionsModel.findOneAndUpdate({_id: auction?._id}, {Status: "Negotiation"}, {new: true})
+        } catch (err) {
+            return res.json({failed: err})
+        }
         }    
     }
     const negotiations = await NegotiationsModel.find()
@@ -112,9 +115,19 @@ app.put('/edit/negotiation/:id', async (req, res) => {
     };
 });
 
+async function PostNegotiation(id, duration, start, username, vehicleId){
+    if ((new Date(start).getTime() + 60000 * parseInt(duration)) <= new Date().getTime()) {
+        await NegotiationsModel.findOneAndUpdate({_id: id}, {Status: "Post-Negotiation"}, {new: true})
+        await VehiclesModel.findOneAndUpdate({_id: vehicleId}, {Auction_Winner: username, Status: 'Post-Negotiation'}, {new: true})
+    }
+};
+
 app.get('/negotiation/:id', async (req, res) => {
     try {
         let negotiation = await NegotiationsModel.findOne({_id: req.params.id});
+        if (negotiation?.Buy_Now_Price && negotiation?.Status === "Pre-Negotiation") {
+            await PostNegotiation(negotiation._id, negotiation.Negotiation_Duration, negotiation.Negotiation_Start_Date, negotiation?.Bids.length > 0 ? negotiation?.Bids[negotiation?.Bids?.length - 1].user : null, negotiation.Vehicle_Id)
+        }
         res.send({status: "200", response: negotiation})
     } catch(err) {
         res.send({status: "500", error: err})
@@ -131,10 +144,20 @@ app.get('/invoices', async (req, res) => {
     }
 });
 
+app.get('/invoices/:name', async (req, res) => {
+    try {
+        let vehicles = await VehiclesModel.find({Auction_Winner: req.params.name});
+        res.send({status: "200", response: vehicles})
+    } catch(err) {
+        res.send({status: "500", error: err})
+    };
+});
+
 app.post('/add/auction', async (req, res) => {
     const vehicle = await VehiclesModel.findOne({_id: req.body.x.Vehicle_Id})
     const response = req.body.x
-    response.Vehicle_Title = vehicle.Vehicle_Manufacturer + " " + vehicle.Model + "(" + vehicle.Manufacturing_Year + ")" 
+    response.Vehicle_Title = vehicle.Vehicle_Manufacturer + " " + vehicle.Model + " (" + vehicle.Manufacturing_Year + ")" 
+    response.Images = vehicle.Images
     response.Current_Bid = response.Auction_Opening_Price
     response.Bids = []
     response.Status = "Pre-Negotiation"
@@ -150,7 +173,7 @@ app.post('/add/auction', async (req, res) => {
 
 async function autoBid(auctions){
     auctions.map(async (auction)=>{
-        if (JSON.parse(auction?.Allow_Auto_Bidding) && 
+        if (JSON.parse(auction?.Allow_Auto_Bidding) && auction?.Status === "Pre-Negotiation" &&
             (((new Date().getTime() - auction.Recent_Auto_Bid.getTime())/ 1000) / 60) > 2){
             if ((parseInt(auction?.Current_Bid) < parseInt(auction[auction?.Stop_Auto_Bidding_Condition]||"100000000"))){
                 await AuctionsModel.findOneAndUpdate({_id: auction?._id}, {
@@ -158,11 +181,18 @@ async function autoBid(auctions){
                     Recent_Auto_Bid: new Date()
                 }, {new: true})
             } else {
+                console.log("First")
                 await AuctionsModel.findOneAndUpdate({_id: auction?._id}, {
                     Allow_Auto_Bidding: "false"
                 }, {new: true})
             }
-        }
+        } else if (JSON.parse(auction?.Allow_Auto_Bidding) == false){
+            null
+        } else if (auction?.Status == "Negotiation") {
+            await AuctionsModel.findOneAndUpdate({_id: auction?._id}, {
+                Allow_Auto_Bidding: "false"
+            }, {new: true})
+        } 
     })
 }
 
@@ -195,7 +225,7 @@ app.put('/edit/auction/:id', async (req, res) => {
     const update = req.body
     try {
         let check = await AuctionsModel.findOne({_id: req.params.id});
-        if (check.Current_Bid > update.Current_Bid) { update.Current_Bid = check.Current_Bid }
+        if (parseInt(check.Current_Bid) > parseInt(update.Current_Bid)) { update.Current_Bid = check.Current_Bid }
         const auction = await AuctionsModel.findOneAndUpdate({_id: req.params.id}, update, {new: true})
         setIncrementalPrice(auction);
         res.send({status: "200", response: auction})
@@ -234,7 +264,7 @@ app.post('/add/vehicle', async (req, res) => {
 app.put('/edit/vehicle/:id', async (req, res) => {
     const update = req.body.values
     try {
-        await VehiclesModel.findOneAndUpdate({_id: req.params.id}, update, {new: true})
+        const x = await VehiclesModel.findOneAndUpdate({_id: req.params.id}, update, {new: true})
         res.send({status: "200"})
     } catch(err) {
         res.send({status: "500", error: err})
@@ -296,6 +326,10 @@ app.post('/api/createuser', async (req, res) => {
     }
 });
 
+app.post('/login', login);
+app.post('/register', signup);
+app.get('/private', isAuth);
+
 app.get('/', async (req, res) => {
     try {
         return res.json({status: "running"})
@@ -304,6 +338,6 @@ app.get('/', async (req, res) => {
     }
 });
 
-app.listen(3000, () => {
+app.listen(8080,'127.0.0.1', () => {
     console.log('Server running')
 });
