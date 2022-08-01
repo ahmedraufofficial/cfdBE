@@ -48,26 +48,26 @@ const VehicleInformationSchema = new mongoose.Schema({
 });
 
 const LeftSideBodyDetailsSchema  = new mongoose.Schema({
-    Front_Fender: customSchema,
-    Front_Door: customSchema,
-    Rear_Door: customSchema,
-    Rear_Fender: customSchema,
+    Front_Fender: customMultipleSchema,
+    Front_Door: customMultipleSchema,
+    Rear_Door: customMultipleSchema,
+    Rear_Fender: customMultipleSchema,
 });
 
 const RightSideBodyDetailsSchema = new mongoose.Schema({
-    Front_Fender: customSchema,
-    Front_Door: customSchema,
-    Rear_Door: customSchema,
-    Rear_Fender: customSchema,
+    Front_Fender: customMultipleSchema,
+    Front_Door: customMultipleSchema,
+    Rear_Door: customMultipleSchema,
+    Rear_Fender: customMultipleSchema,
 });
 
 const MiddleBodyDetailsSchema = new mongoose.Schema({
-    Front_Bumper: customSchema,
+    Front_Bumper: customMultipleSchema,
     Show_Grill: customMultipleSchema,
-    Hood: customSchema,
-    Roof: customSchema,
-    Trunk_Or_Tailgate: customSchema,
-    Rear_Bumper: customSchema,
+    Hood: customMultipleSchema,
+    Roof: customMultipleSchema,
+    Trunk_Or_Tailgate: customMultipleSchema,
+    Rear_Bumper: customMultipleSchema,
 });
 
 const GlassesSchema = new mongoose.Schema({
@@ -136,7 +136,7 @@ const CarInteriorSchema = new mongoose.Schema({
     },
     Cluster_And_Warning_Lights: {
         Cluster: customMultipleSchema,
-        Warning_Lights: customSchema
+        Warning_Lights: customMultipleSchema
     },
 });
 
