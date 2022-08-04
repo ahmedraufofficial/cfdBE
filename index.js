@@ -13,6 +13,8 @@ const AuctionsModel = require('./models/Auctions');
 const AdminModel = require('./models/Admin');
 const UserModel = require('./models/Users');
 const { signup, login, isAuth } = require('./controllers/auth.js');
+const { pdfier } = require('./controllers/pdfier.js'); 
+const fetch = require('node-fetch');
 
 app.use(cors());
 app.use(express.json());
@@ -303,6 +305,9 @@ app.get('/vehicle/:id', async (req, res) => {
         res.json({ status: "error", error: "Invalid Token"})
     }
 });
+
+app.get('/pdf/:id', pdfier);
+
 
 app.post('/api/auth', async (req, res) => {
     
