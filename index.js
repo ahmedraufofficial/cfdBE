@@ -14,7 +14,6 @@ const AdminModel = require('./models/Admin');
 const UserModel = require('./models/Users');
 const { signup, login, isAuth } = require('./controllers/auth.js');
 const { pdfier } = require('./controllers/pdfier.js'); 
-const fetch = require('node-fetch');
 
 app.use(cors());
 app.use(express.json());
@@ -306,7 +305,7 @@ app.get('/vehicle/:id', async (req, res) => {
     }
 });
 
-app.get('/pdf/:id', pdfier);
+app.post('/pdf', pdfier);
 
 
 app.post('/api/auth', async (req, res) => {

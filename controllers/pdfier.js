@@ -10,7 +10,7 @@ const fetchImage = async (src) => {
 };
 
 const pdfier = async (req, res, next) => {
-    const vehicle = await VehiclesModel.findOne({_id: req.params.id})
+    const vehicle = await VehiclesModel.findOne({_id: req.body.id})
     const generalDetails = { 
         title: '',
         headers: [
@@ -219,6 +219,11 @@ const pdfier = async (req, res, next) => {
 
     var myDoc = new PDFDocument({bufferPages: true});
     
+    let filename = req.body.filename
+    filename = encodeURIComponent(filename) + '.pdf'
+    res.setHeader('Content-disposition', 'attachment; filename="' + filename + '"')
+    res.setHeader('Content-type', 'application/pdf')
+
     let buffers = [];
     myDoc.on('data', buffers.push.bind(buffers));
     myDoc.on('end', () => {
@@ -260,10 +265,12 @@ const pdfier = async (req, res, next) => {
           positionX = 60
           positionY = positionY + 160
        }
-       const getImg = path.join(__dirname, "../images/", img)
-       //await fetchImage(`http://142.93.231.219/images/${img}`);
-       await myDoc.image(getImg, positionX, positionY, {width: 150});
-       positionX = positionX + 170
+       try {
+        const getImg = path.join(__dirname, "../images/", img)
+        //await fetchImage(`http://142.93.231.219/images/${img}`);
+        await myDoc.image(getImg, positionX, positionY, {width: 150});
+        positionX = positionX + 170
+       } catch(e) {}
        };
 
     myDoc.addPage();
