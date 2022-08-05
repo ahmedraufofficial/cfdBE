@@ -1,6 +1,7 @@
 const PDFDocument =  require('pdfkit-table');
 const VehiclesModel = require('../models/Vehicles');
 const fetch = require('node-fetch');
+const path = require('path');
 
 const fetchImage = async (src) => {
     const response = await fetch(src);
@@ -240,7 +241,8 @@ const pdfier = async (req, res, next) => {
         align: 'left'
     });
 
-    const getImg = await fetchImage(`http://142.93.231.219/images/logo.png`);
+    const getImg = path.join(__dirname, "../images/", 'logo.png')
+    //await fetchImage(`http://142.93.231.219/images/logo.png`);
     await myDoc.image(getImg, 70, 20, {width: 50});
 
     myDoc.moveDown();
@@ -258,7 +260,8 @@ const pdfier = async (req, res, next) => {
           positionX = 60
           positionY = positionY + 160
        }
-       const getImg = await fetchImage(`http://142.93.231.219/images/${img}`);
+       const getImg = path.join(__dirname, "../images/", img)
+       //await fetchImage(`http://142.93.231.219/images/${img}`);
        await myDoc.image(getImg, positionX, positionY, {width: 150});
        positionX = positionX + 170
        };
