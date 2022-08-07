@@ -12,7 +12,7 @@ const NegotiationsModel = require('./models/Negotiations');
 const AuctionsModel = require('./models/Auctions');
 const AdminModel = require('./models/Admin');
 const UserModel = require('./models/Users');
-const { signup, login, isAuth } = require('./controllers/auth.js');
+const { signup, login, isAuth, accounts, activate } = require('./controllers/auth.js');
 const { pdfier } = require('./controllers/pdfier.js'); 
 
 app.use(cors());
@@ -346,6 +346,8 @@ app.post('/api/createuser', async (req, res) => {
 app.post('/login', login);
 app.post('/register', signup);
 app.get('/private', isAuth);
+app.get('/accounts', accounts)
+app.post('/accounts/activate', activate)
 
 app.get('/', async (req, res) => {
     try {

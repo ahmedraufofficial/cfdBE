@@ -18,10 +18,11 @@ const signup = (req, res, next) => {
                         username: req.body.username,
                         number: req.body.number,
                         password: passwordHash,
+                        status: 'Inactive'
                     })
                     return User.save()
                     .then(() => {
-                        res.status(200).json({message: "user created"});
+                        res.status(200).json({message: "Account created. Kindly wait for it to be activated! Thanks."});
                     })
                     .catch(err => {
                         console.log(err);
@@ -42,8 +43,6 @@ const signup = (req, res, next) => {
 
 
 const login = (req, res, next) => {
-    console.log("Here")
-    // checks if email exists
     UserModel.findOne({email: req.body.email})
     .then(user => {
         if (!user) {
@@ -58,7 +57,8 @@ const login = (req, res, next) => {
                     res.status(200).json({message: "user logged in", "token": token, data: {
                         username: user.username,
                         email: user.email,
-                        token: token
+                        token: token,
+                        status: user.status
                     }});
                 } else { // password doesnt match
                     res.status(401).json({message: "invalid credentials"});
@@ -90,4 +90,31 @@ const isAuth = (req, res, next) => {
     };
 };
 
-module.exports = { signup, login, isAuth };
+const accounts = async (req, res, next) => {
+    try {
+        const accounts = await UserModel.find()
+        return res.json({data: accounts})
+    } catch (err) {
+        console.log(err)
+        res.json({ status: "error", error: "Invalid Token"})
+    }
+};
+
+const activate = (req, res, next) => {
+    UserModel.findOne({_id: req.body.id})
+    .then(async user => {
+        if (!user) {
+            return res.status(404).json({message: "user not found"});
+        } else {
+            const update = await UserModel.findOneAndUpdate({_id: req.body.id}, {status: "Active"}, {new: true})
+            if (update) {
+                return res.send({status: "200"})
+            }
+        };
+    })
+    .catch(err => {
+        console.log('error', err);
+    });
+};
+
+module.exports = { signup, login, isAuth, accounts, activate };
