@@ -12,6 +12,9 @@ const NegotiationsModel = require('./models/Negotiations');
 const AuctionsModel = require('./models/Auctions');
 const AdminModel = require('./models/Admin');
 const UserModel = require('./models/Users');
+const ClassifiedsModel = require('./models/Classifieds');
+const EvaluationModel = require('./models/Evaluation');
+
 const { signup, login, isAuth, accounts, activate } = require('./controllers/auth.js');
 const { pdfier } = require('./controllers/pdfier.js'); 
 
@@ -42,6 +45,72 @@ const upload = multer({
  
 mongoose.connect('mongodb+srv://carology:0Y8Yey4V8suX4aWZ@carology.czjjg.mongodb.net/carology?retryWrites=true&w=majority', {
     useNewUrlParser: true,
+});
+
+app.post("/upload_classified_images", upload.array("files",8), uploadFiles);
+async function uploadFiles(req, res) {
+    const update = {Images: req.files.map((file) => file.filename)}
+    await ClassifiedsModel.findOneAndUpdate({_id: req.body.id}, update, {new: true})
+    req.files?.length > 0 ?
+    res.json({ message: "Successfully uploaded files" }) : res.json( {message: "Something went wrong"})
+}
+
+app.get('/classifieds', async (req, res) => {
+    try {
+        const classifieds = await ClassifiedsModel.find()
+        return res.json({data: classifieds})
+    } catch (err) {
+        console.log(err)
+        res.json({ status: "error", error: "Invalid Token"})
+    }
+});
+
+app.post('/add/classifieds', async (req, res) => {
+    const classified = new ClassifiedsModel(req.body.values);
+    try {
+        await classified.save();
+        res.send({status: "200"})
+    } catch(err) {
+        res.send({status: "500", error: err})
+    };  
+});
+
+app.post('/add/evaluation', async (req, res) => {
+    const evaluation = new EvaluationModel(req.body.values);
+    try {
+        await evaluation.save();
+        res.send({status: "200"})
+    } catch(err) {
+        res.send({status: "500", error: err})
+    };  
+});
+
+app.get('/classifieds/:id', async (req, res) => {
+    try {
+        let classified = await ClassifiedsModel.findOne({_id: req.params.id});
+        res.send({status: "200", response: classified})
+    } catch(err) {
+        res.send({status: "500", error: err})
+    };
+});
+
+app.get('/email', async (req, res) => {
+
+    var mailOptions = {
+        from: 'llc.carology@gmail.com',
+        to: 'arky99992@gmail.com',
+        subject: 'Sending Email using Node.js',
+        text: 'That was easy!'
+      };
+
+    await transporter.sendMail(mailOptions, function(error, info){
+        if (error) {
+          console.log(error);
+        } else {
+          console.log('Email sent: ' + info.response);
+        }
+    });
+    res.send({status: "200"})
 });
 
 app.post('/add/negotiation', async (req, res) => {
@@ -264,6 +333,7 @@ async function uploadFiles(req, res) {
     req.files?.length > 0 ?
     res.json({ message: "Successfully uploaded files" }) : res.json( {message: "Something went wrong"})
 }
+
 
 app.post('/add/vehicle', async (req, res) => {
     const vehicle = new VehiclesModel(req.body.x);
