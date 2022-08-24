@@ -1,6 +1,15 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const UserModel = require('../models/Users');
+const nodemailer = require('nodemailer');
+
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: 'llc.carology@gmail.com',
+      pass: 'qgxenzpjdnnowipw'
+    }
+});
 
 const signup = (req, res, next) => {
     UserModel.findOne({email: req.body.email})
@@ -22,6 +31,20 @@ const signup = (req, res, next) => {
                     })
                     return User.save()
                     .then(() => {
+                        var mailOptions = {
+                            from: 'llc.carology@gmail.com',
+                            to: req.body.email,
+                            subject: 'Confirm your account',
+                            text: 'Thank you for signing up. Click on this link to use basic features of the app while we approve your request to advanced user.'
+                          };
+                    
+                        transporter.sendMail(mailOptions, function(error, info){
+                            if (error) {
+                              console.log(error);
+                            } else {
+                              console.log('Email sent: ' + info.response);
+                            }
+                        });
                         res.status(200).json({message: "Account created. Kindly wait for it to be activated! Thanks."});
                     })
                     .catch(err => {
@@ -90,6 +113,20 @@ const isAuth = (req, res, next) => {
     };
 };
 
+const contact = async (req, res, next) => {
+    UserModel.findOne({username: req.params.username})
+    .then(async user => {
+        if (!user) {
+            return res.status(404).json({message: "user not found"});
+        } else {
+            return res.send({email: user.email, number: user.number})
+        };
+    })
+    .catch(err => {
+        console.log('error', err);
+    });
+};
+
 const accounts = async (req, res, next) => {
     try {
         const accounts = await UserModel.find()
@@ -117,4 +154,4 @@ const activate = (req, res, next) => {
     });
 };
 
-module.exports = { signup, login, isAuth, accounts, activate };
+module.exports = { signup, login, isAuth, contact, accounts, activate };
