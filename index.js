@@ -15,7 +15,7 @@ const UserModel = require('./models/Users');
 const ClassifiedsModel = require('./models/Classifieds');
 const EvaluationModel = require('./models/Evaluation');
 
-const { signup, login, isAuth, contact, accounts, activate } = require('./controllers/auth.js');
+const { signup, login, isAuth, contact, accounts, activate, generateOtp, resetPassword } = require('./controllers/auth.js');
 const { pdfier } = require('./controllers/pdfier.js'); 
 
 app.use(cors());
@@ -417,8 +417,10 @@ app.post('/login', login);
 app.post('/register', signup);
 app.get('/private', isAuth);
 app.get('/contact/:username', contact);
-app.get('/accounts', accounts)
-app.post('/accounts/activate', activate)
+app.get('/accounts', accounts);
+app.post('/forgot-password', generateOtp);
+app.post('/reset-password', resetPassword);
+app.post('/accounts/activate', activate);
 
 app.get('/', async (req, res) => {
     try {

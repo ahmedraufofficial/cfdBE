@@ -20,6 +20,9 @@ const UserSchema = new mongoose.Schema({
     status: {
         type: String,
         required: true
+    },
+    otp: {
+        type: String,
     }
 });
 
