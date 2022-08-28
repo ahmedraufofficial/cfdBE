@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const UserModel = require('../models/Users');
 const nodemailer = require('nodemailer');
+const math = require("mathjs")
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -137,6 +138,60 @@ const accounts = async (req, res, next) => {
     }
 };
 
+const generateOtp = async (req, res, next) => {
+    try {
+        const otp = (math.floor(math.random()*90000) + 10000).toString();
+        const account = await UserModel.findOneAndUpdate({email: req.body.email}, {otp: otp}, {new: true})
+        var mailOptions = {
+            from: 'llc.carology@gmail.com',
+            to: req.body.email,
+            subject: 'Carology - OTP',
+            text: `Kindly use this OTP --- ${otp} --- to set new password` 
+        };
+        if (account) {
+            transporter.sendMail(mailOptions, function(error, info){
+                if (error) {
+                  console.log(error);
+                } else {
+                  console.log('Email sent: ' + info.response);
+                }
+            });
+            return res.json({status: '200'})
+        }
+        return res.json({ status: "error", error: "Email does not exist!"})
+    } catch (err) {
+        console.log(err)
+        res.json({ status: "error", error: "Invalid Token"})
+    }
+};
+
+const resetPassword = async (req, res, next) => {
+    try {
+        const account = await UserModel.findOne({email: req.body.email})
+        if (account) {
+            if (account.otp === req.body.otp) {
+                bcrypt.hash(req.body.password, 12, (err, passwordHash) => {
+                    if (err) {
+                        return res.status(500).json({message: "couldnt hash the password"}); 
+                    } else if (passwordHash) {
+                        UserModel.findOneAndUpdate({id: account._id}, {otp: "", password: passwordHash}, {new: true}).then(()=>{
+                            res.json({status: '200'});
+                        }).catch(err => {
+                            console.log(err)
+                        });      
+                    }})
+            } else {
+                return res.json({ status: "error", error: "OTP does not exist!"})
+            }
+            return res.json({status: '200'})
+        }
+        return res.json({ status: "error", error: "Email does not exist!"})
+    } catch (err) {
+        console.log(err)
+        res.json({ status: "error", error: "Invalid Token"})
+    }
+};
+
 const activate = (req, res, next) => {
     UserModel.findOne({_id: req.body.id})
     .then(async user => {
@@ -154,4 +209,4 @@ const activate = (req, res, next) => {
     });
 };
 
-module.exports = { signup, login, isAuth, contact, accounts, activate };
+module.exports = { signup, login, isAuth, contact, accounts, activate, generateOtp, resetPassword };
