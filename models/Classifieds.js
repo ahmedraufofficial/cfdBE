@@ -18,8 +18,6 @@ const ClassifiedsSchema = new mongoose.Schema({
     Engine: String,
     Product_Description: String,
     Price: String,
-    Currency: String,
-    Seller_Dealer: String,
     Added_Date: reqDate,
     Features: Array,
     Location: String,
@@ -34,6 +32,9 @@ const ClassifiedsSchema = new mongoose.Schema({
     Fuel_Type: String,
     Interior_Color: String,
     Doors: String,
+    Specs: String,
+    Seller_Name: String,
+    Seller_Contact: String,
     Username: String,
     Images: Array,
 });

@@ -42,6 +42,7 @@ const EvaluationsSchema = new mongoose.Schema({
     Fuel_Type: String,
     Interior_Color: String,
     Doors: String,
+    Specs: String,
     Username: String,
     Images: Array,
 });

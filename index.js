@@ -47,12 +47,12 @@ mongoose.connect('mongodb+srv://carology:0Y8Yey4V8suX4aWZ@carology.czjjg.mongodb
     useNewUrlParser: true,
 });
 
-app.post("/upload_classified_images", upload.array("files",8), uploadFiles);
-async function uploadFiles(req, res) {
+app.post("/upload_classified_images", upload.array("files",8), uploadClassifiedFiles);
+async function uploadClassifiedFiles(req, res) {
     const update = {Images: req.files.map((file) => file.filename)}
-    await ClassifiedsModel.findOneAndUpdate({_id: req.body.id}, update, {new: true})
+    //await ClassifiedsModel.findOneAndUpdate({_id: req.body.id}, update, {new: true})
     req.files?.length > 0 ?
-    res.json({ message: "Successfully uploaded files" }) : res.json( {message: "Something went wrong"})
+    res.json({ message: update }) : res.json( {message: "Something went wrong"})
 }
 
 app.get('/classifieds', async (req, res) => {
