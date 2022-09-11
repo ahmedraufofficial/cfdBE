@@ -14,6 +14,14 @@ const AdminModel = require('./models/Admin');
 const UserModel = require('./models/Users');
 const ClassifiedsModel = require('./models/Classifieds');
 const EvaluationModel = require('./models/Evaluation');
+const nodemailer = require('nodemailer');
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: 'llc.carology@gmail.com',
+      pass: 'qgxenzpjdnnowipw'
+    }
+});
 
 const { signup, login, isAuth, contact, accounts, activate, generateOtp, resetPassword } = require('./controllers/auth.js');
 const { pdfier } = require('./controllers/pdfier.js'); 
@@ -93,6 +101,17 @@ app.get('/classifieds/:id', async (req, res) => {
         res.send({status: "500", error: err})
     };
 });
+
+app.put('/edit/classifieds/:id', async (req, res) => {
+    const update = req.body.values
+    try {
+        const x = await ClassifiedsModel.findOneAndUpdate({_id: req.params.id}, update, {new: true})
+        res.send({status: "200"})
+    } catch(err) {
+        res.send({status: "500", error: err})
+    };
+});
+
 
 app.get('/email', async (req, res) => {
 
@@ -377,6 +396,15 @@ app.get('/vehicle/:id', async (req, res) => {
 
 app.post('/pdf', pdfier);
 
+app.get('/evaluations', async (req, res) => {
+    try {
+        const evaluations = await EvaluationModel.find()
+        return res.json({data: evaluations})
+    } catch (err) {
+        console.log(err)
+        res.json({ status: "error", error: "Invalid Token"})
+    }
+});
 
 app.post('/api/auth', async (req, res) => {
     

@@ -2,7 +2,15 @@ const PDFDocument =  require('pdfkit-table');
 const VehiclesModel = require('../models/Vehicles');
 const fetch = require('node-fetch');
 const path = require('path');
+const nodemailer = require('nodemailer');
 
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: 'llc.carology@gmail.com',
+      pass: 'qgxenzpjdnnowipw'
+    }
+});
 const fetchImage = async (src) => {
     const response = await fetch(src);
     const image = await response.buffer();
@@ -228,6 +236,26 @@ const pdfier = async (req, res, next) => {
     myDoc.on('data', buffers.push.bind(buffers));
     myDoc.on('end', () => {
         let pdfData = Buffer.concat(buffers);
+
+        var mailOptions = {
+            from: 'llc.carology@gmail.com',
+            to: req.body.email,
+            subject: `${vehicle?.Vehicle_Manufacturer} ${vehicle?.Model} ${vehicle?.Manufacturing_Year} PDF`,
+            text: 'Kindly download the attahced PDF from the email',
+            attachments: [{
+                filename: 'attachment.pdf',
+                content: pdfData,
+              }],
+          };
+    
+        transporter.sendMail(mailOptions, function(error, info){
+            if (error) {
+              console.log(error);
+            } else {
+              console.log('Email sent: ' + info.response);
+            }
+        });
+
         res.writeHead(200, {
         'Content-Length': Buffer.byteLength(pdfData),
         'Content-Type': 'application/pdf',
