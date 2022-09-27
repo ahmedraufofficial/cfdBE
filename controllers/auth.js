@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const UserModel = require('../models/Users');
 const nodemailer = require('nodemailer');
 const math = require("mathjs")
+const { userNotification } = require('./notifications.js')
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -65,6 +66,9 @@ const signup = (req, res, next) => {
     });
 };
 
+const assignDeviceId = async(email, deviceId) => {
+    await UserModel.findOneAndUpdate({ email: email }, {Device_Id: deviceId}, {new: true})
+}
 
 const login = (req, res, next) => {
     UserModel.findOne({email: req.body.email})
@@ -77,6 +81,8 @@ const login = (req, res, next) => {
                 if (err) { // error while comparing
                     res.status(502).json({message: "error while checking user password"});
                 } else if (compareRes) { // password match
+                    assignDeviceId(req.body.email, req.body.deviceId);
+                    userNotification("Signed In", "Notification Test", req.body.deviceId)
                     const token = jwt.sign({ email: req.body.email }, 'secret', { expiresIn: '1h' });
                     res.status(200).json({message: "user logged in", "token": token, data: {
                         username: user.username,

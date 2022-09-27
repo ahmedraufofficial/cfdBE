@@ -25,6 +25,7 @@ const transporter = nodemailer.createTransport({
 
 const { signup, login, isAuth, contact, accounts, activate, generateOtp, resetPassword } = require('./controllers/auth.js');
 const { pdfier } = require('./controllers/pdfier.js'); 
+const { userNotification } = require('./controllers/notifications.js')
 
 app.use(cors());
 app.use(express.json());
@@ -87,6 +88,26 @@ app.post('/add/evaluation', async (req, res) => {
     const evaluation = new EvaluationModel(req.body.values);
     try {
         await evaluation.save();
+        /* UserModel.findOne({username: req.body.values.username}).then(async user => {
+            if (user) {
+                var mailOptions = {
+                    from: 'llc.carology@gmail.com',
+                    to: user.email,
+                    subject: 'Sending Email using Node.js',
+                    text: 'That was easy!'
+                };
+                transporter.sendMail(mailOptions, function(error, info){
+                    if (error) {
+                      console.log(error);
+                    } else {
+                      console.log('Email sent: ' + info.response);
+                    }
+                });
+            }
+        })
+        .catch(err => {
+            console.log('error', err);
+        }); */
         res.send({status: "200"})
     } catch(err) {
         res.send({status: "500", error: err})
