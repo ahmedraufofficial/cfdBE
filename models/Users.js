@@ -23,6 +23,9 @@ const UserSchema = new mongoose.Schema({
     },
     otp: {
         type: String,
+    },
+    Device_Id: {
+        type: String,
     }
 });
 
