@@ -71,17 +71,20 @@ const assignDeviceId = async(email, deviceId) => {
 }
 
 const login = (req, res, next) => {
-    UserModel.findOne({email: req.body.email})
-    .then(user => {
+    UserModel.findOne({email: req.body.email}).then(user => {
         if (!user) {
             return res.status(404).json({message: "user not found"});
         } else {
-            // password hash
             bcrypt.compare(req.body.password, user.password, (err, compareRes) => {
-                if (err) { // error while comparing
+                if (err) {
                     res.status(502).json({message: "error while checking user password"});
-                } else if (compareRes) { // password match
-                    assignDeviceId(req.body.email, req.body.deviceId);
+                } else if (compareRes) { 
+                    //assignDeviceId(req.body.email, req.body.deviceId);
+                    UserModel.findOneAndUpdate({ email: req.body.email}, {Device_Id: req.body.deviceId}, {new: true}).then((user => {
+                        if (user) {
+                            console.log("Device Added")
+                        }
+                    }))
                     userNotification("Signed In", "Notification Test", req.body.deviceId)
                     const token = jwt.sign({ email: req.body.email }, 'secret', { expiresIn: '1h' });
                     res.status(200).json({message: "user logged in", "token": token, data: {
@@ -90,13 +93,12 @@ const login = (req, res, next) => {
                         token: token,
                         status: user.status
                     }});
-                } else { // password doesnt match
+                } else {
                     res.status(401).json({message: "invalid credentials"});
                 };
             });
         };
-    })
-    .catch(err => {
+    }).catch(err => {
         console.log('error', err);
     });
 };
