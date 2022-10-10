@@ -65,4 +65,13 @@ const usersNotificationApi = async (req, res, next) => {
     })
 };
 
-module.exports = {userNotification, usersNotificationApi, userNotificationApi}
+const userNotificationId = async (req, res, next) => {
+    const id = await UserModel.findOne({email: req.body.email})
+    if (id) {
+        res.status(200).json({deviceId: id?.Device_Id || ""})
+    } else {
+        res.status(401).json({message: "Something went wrong"})
+    }
+};
+
+module.exports = {userNotification, usersNotificationApi, userNotificationApi, userNotificationId}

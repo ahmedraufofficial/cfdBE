@@ -25,7 +25,7 @@ const transporter = nodemailer.createTransport({
 
 const { signup, login, isAuth, contact, accounts, activate, generateOtp, resetPassword } = require('./controllers/auth.js');
 const { pdfier } = require('./controllers/pdfier.js'); 
-const { usersNotificationApi, userNotificationApi } = require('./controllers/notifications.js')
+const { usersNotificationApi, userNotificationApi, userNotificationId } = require('./controllers/notifications.js')
 
 app.use(cors());
 app.use(express.json());
@@ -472,6 +472,7 @@ app.post('/reset-password', resetPassword);
 app.post('/accounts/activate', activate);
 app.post('/broadcast', usersNotificationApi);
 app.post('/p2p', userNotificationApi);
+app.post('/deviceid', userNotificationId);
 
 app.get('/', async (req, res) => {
     try {
