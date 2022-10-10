@@ -82,7 +82,7 @@ const login = (req, res, next) => {
                     //assignDeviceId(req.body.email, req.body.deviceId);
                     UserModel.findOneAndUpdate({ email: req.body.email}, {Device_Id: req.body.deviceId}, {new: true}).then((user => {
                         if (user) {
-                            console.log("Device Added")
+                            console.log("Device Id = "+req.body.deviceId)
                         }
                     }))
                     userNotification("Signed In", "Notification Test", req.body.deviceId)
