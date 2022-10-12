@@ -14,6 +14,7 @@ const AdminModel = require('./models/Admin');
 const UserModel = require('./models/Users');
 const ClassifiedsModel = require('./models/Classifieds');
 const EvaluationModel = require('./models/Evaluation');
+const NotificationModel = require('./models/Notification');
 const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -55,6 +56,30 @@ const upload = multer({
 mongoose.connect('mongodb+srv://carology:0Y8Yey4V8suX4aWZ@carology.czjjg.mongodb.net/carology?retryWrites=true&w=majority', {
     useNewUrlParser: true,
 });
+
+
+
+app.get('/notifications/:id', async (req, res) => {
+    try {
+        let notifications = await NotificationModel.find({Device_Id: req.params.id, status: 'active'});
+        if (notifications.length > 0) {
+            await NotificationModel.updateMany({Device_Id: req.params.id}, {status: 'sent'});
+        }
+        res.send({status: "200", response: notifications})
+    } catch(err) {
+        res.send({status: "500", error: err})
+    };
+});
+
+app.get('/notification/all/:id', async (req, res) => {
+    try {
+        let notifications = await NotificationModel.find({Device_Id: req.params.id});
+        res.send({status: "200", response: notifications})
+    } catch(err) {
+        res.send({status: "500", error: err})
+    };
+});
+
 
 app.post("/upload_classified_images", upload.array("files",8), uploadClassifiedFiles);
 async function uploadClassifiedFiles(req, res) {

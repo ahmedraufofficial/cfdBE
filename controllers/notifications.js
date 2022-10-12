@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 const UserModel = require('../models/Users');
+const NotificationModel = require('../models/Notification');
 
 const userNotification = (title, text, id) => {
     var notification = {
@@ -28,7 +29,7 @@ const userNotification = (title, text, id) => {
     })
 }
 
-const userNotificationApi = (req, res, next) => {
+const userNotificationApi = async (req, res, next) => {
     var notification = {
         title: req.body.title,
         text: req.body.text
@@ -39,6 +40,18 @@ const userNotificationApi = (req, res, next) => {
         'notification': notification,
         'registration_ids': fcm_token
     }
+
+    const notif = new NotificationModel({
+        Device_Id: req.body.id,
+        notification: req.body.title,
+        status: 'active',
+        time: new Date()
+    });
+    try {
+        await notif.save();
+    } catch(err) {
+        console.log(err)
+    };  
 
     fetch('https://fcm.googleapis.com/fcm/send', {
         'method': 'POST',
@@ -59,6 +72,20 @@ const usersNotificationApi = async (req, res, next) => {
     const ids = await UserModel.find({Device_Id:{'$exists': 1}})
     const justID = ids.map((data)=>{
         return data.Device_Id
+    })
+
+    ids.map(async (data)=>{
+        var notif = new NotificationModel({
+            Device_Id: data.Device_Id,
+            notification: req.body.title,
+            status: 'active',
+            time: new Date()
+        });
+        try {
+            await notif.save();
+        } catch(err) {
+            console.log(err)
+        };  
     })
 
     var notification = {
