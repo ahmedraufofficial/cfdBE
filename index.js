@@ -26,7 +26,7 @@ const transporter = nodemailer.createTransport({
 
 const { signup, login, isAuth, contact, accounts, activate, generateOtp, resetPassword } = require('./controllers/auth.js');
 const { pdfier } = require('./controllers/pdfier.js'); 
-const { usersNotificationApi, userNotificationApi, userNotificationId, userNotificationUsername } = require('./controllers/notifications.js')
+const { userNotification, usersNotificationApi, userNotificationApi, userNotificationId, userNotificationUsername } = require('./controllers/notifications.js')
 
 app.use(cors());
 app.use(express.json());
@@ -254,6 +254,10 @@ async function PostNegotiation(id, duration, start, username, vehicleId){
     if ((new Date(start).getTime() + 60000 * parseInt(duration)) <= new Date(new Date().setHours(new Date().getHours() + 4)).getTime()) {
         await NegotiationsModel.findOneAndUpdate({_id: id}, {Status: "Post-Negotiation"}, {new: true})
         await VehiclesModel.findOneAndUpdate({_id: vehicleId}, {Auction_Winner: username, Status: 'Post-Negotiation'}, {new: true})
+        const user = await UserModel.findOne({username: username})
+        if (user) {
+            userNotification("Auction Won!", "A Vehicle has been added to your cart", user.Device_Id)
+        }
     }
 };
 
