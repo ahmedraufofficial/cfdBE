@@ -273,6 +273,15 @@ app.get('/negotiation/:id', async (req, res) => {
     };
 });
 
+app.get('/negotiation/vehicle/:id', async (req, res) => {
+    try {
+        let negotiation = await NegotiationsModel.findOne({Vehicle_Id: req.params.id});
+        res.send({status: "200", response: negotiation})
+    } catch(err) {
+        res.send({status: "500", error: err})
+    };
+});
+
 app.get('/invoices', async (req, res) => {
     try {
         const invoices = await NegotiationsModel.find({Status: "Post-Negotiation"}); 
