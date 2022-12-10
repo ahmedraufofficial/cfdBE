@@ -7,13 +7,12 @@ const path = require('path');
 const multer = require('multer');
 const moment = require('moment');
 const mongoose = require('mongoose');
-const VehiclesModel = require('./models/Vehicles');
+const EvaluationsModel = require('./models/Evaluations');
 const NegotiationsModel = require('./models/Negotiations');
 const AuctionsModel = require('./models/Auctions');
 const AdminModel = require('./models/Admin');
 const UserModel = require('./models/Users');
 const ClassifiedsModel = require('./models/Classifieds');
-const EvaluationModel = require('./models/Evaluation');
 const NotificationModel = require('./models/Notification');
 const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
@@ -25,7 +24,6 @@ const transporter = nodemailer.createTransport({
 });
 
 const { signup, login, isAuth, contact, accounts, activate, generateOtp, resetPassword } = require('./controllers/auth.js');
-const { pdfier } = require('./controllers/pdfier.js'); 
 const { userNotification, usersNotificationApi, userNotificationApi, userNotificationId, userNotificationUsername } = require('./controllers/notifications.js')
 
 app.use(cors());
@@ -53,7 +51,7 @@ const upload = multer({
     }
 });
  
-mongoose.connect('mongodb+srv://carology:0Y8Yey4V8suX4aWZ@carology.czjjg.mongodb.net/carology?retryWrites=true&w=majority', {
+mongoose.connect('mongodb+srv://carfairdeal:ahmedrauf1@cluster0.qisse7b.mongodb.net/?retryWrites=true&w=majority', {
     useNewUrlParser: true,
 });
 
@@ -103,36 +101,6 @@ app.post('/add/classifieds', async (req, res) => {
     const classified = new ClassifiedsModel(req.body.values);
     try {
         await classified.save();
-        res.send({status: "200"})
-    } catch(err) {
-        res.send({status: "500", error: err})
-    };  
-});
-
-app.post('/add/evaluation', async (req, res) => {
-    const evaluation = new EvaluationModel(req.body.values);
-    try {
-        await evaluation.save();
-        /* UserModel.findOne({username: req.body.values.username}).then(async user => {
-            if (user) {
-                var mailOptions = {
-                    from: 'llc.carology@gmail.com',
-                    to: user.email,
-                    subject: 'Sending Email using Node.js',
-                    text: 'That was easy!'
-                };
-                transporter.sendMail(mailOptions, function(error, info){
-                    if (error) {
-                      console.log(error);
-                    } else {
-                      console.log('Email sent: ' + info.response);
-                    }
-                });
-            }
-        })
-        .catch(err => {
-            console.log('error', err);
-        }); */
         res.send({status: "200"})
     } catch(err) {
         res.send({status: "500", error: err})
@@ -413,8 +381,8 @@ async function uploadFiles(req, res) {
 }
 
 
-app.post('/add/vehicle', async (req, res) => {
-    const vehicle = new VehiclesModel(req.body.x);
+app.post('/add/evaluations', async (req, res) => {
+    const vehicle = new EvaluationModel(req.body.x);
     try {
         await vehicle.save();
         res.send({status: "200"})
@@ -423,42 +391,30 @@ app.post('/add/vehicle', async (req, res) => {
     };  
 });
 
-app.put('/edit/vehicle/:id', async (req, res) => {
+app.put('/edit/evaluations/:id', async (req, res) => {
     const update = req.body.values
     try {
-        const x = await VehiclesModel.findOneAndUpdate({_id: req.params.id}, update, {new: true})
+        const x = await EvaluationsModel.findOneAndUpdate({_id: req.params.id}, update, {new: true})
         res.send({status: "200"})
     } catch(err) {
         res.send({status: "500", error: err})
     };
 });
 
-app.get('/vehicles', cors(), async (req, res) => {
+app.get('/evaluations', cors(), async (req, res) => {
     try {
-        const vehicles = await VehiclesModel.find()
-        return res.json({data: vehicles})
-    } catch (err) {
-        console.log(err)
-        res.json({ status: "error", error: "Invalid Token"})
-    }
-});
-
-app.get('/vehicle/:id', async (req, res) => {
-    try {
-        const vehicle = await VehiclesModel.findOne({_id: req.params.id})
-        return res.json({data: vehicle})
-    } catch (err) {
-        console.log(err)
-        res.json({ status: "error", error: "Invalid Token"})
-    }
-});
-
-app.post('/pdf', pdfier);
-
-app.get('/evaluations', async (req, res) => {
-    try {
-        const evaluations = await EvaluationModel.find()
+        const evaluations = await EvaluationsModel.find()
         return res.json({data: evaluations})
+    } catch (err) {
+        console.log(err)
+        res.json({ status: "error", error: "Invalid Token"})
+    }
+});
+
+app.get('/evaluation/:id', async (req, res) => {
+    try {
+        const evaluation = await EvaluationsModel.findOne({_id: req.params.id})
+        return res.json({data: evaluation})
     } catch (err) {
         console.log(err)
         res.json({ status: "error", error: "Invalid Token"})
@@ -521,6 +477,6 @@ app.get('/', async (req, res) => {
     }
 });
 
-app.listen(8080,'127.0.0.1', () => {
+app.listen(5000,'127.0.0.1', () => {
     console.log(new Date())
 });
