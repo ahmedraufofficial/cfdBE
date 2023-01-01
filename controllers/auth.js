@@ -29,25 +29,10 @@ const signup = (req, res, next) => {
                         username: req.body.username,
                         number: req.body.number,
                         password: passwordHash,
-                        status: 'Inactive'
                     })
                     return User.save()
                     .then(() => {
-                        var mailOptions = {
-                            from: 'llc.carology@gmail.com',
-                            to: req.body.email,
-                            subject: 'Confirm your account',
-                            text: 'Thank you for signing up. Click on this link to use basic features of the app while we approve your request to advanced user.'
-                          };
-                    
-                        transporter.sendMail(mailOptions, function(error, info){
-                            if (error) {
-                              console.log(error);
-                            } else {
-                              console.log('Email sent: ' + info.response);
-                            }
-                        });
-                        res.status(200).json({message: "Account created. Kindly wait for it to be activated! Thanks."});
+                        res.status(200).json({message: "Account created!"});
                     })
                     .catch(err => {
                         console.log(err);
@@ -79,19 +64,11 @@ const login = (req, res, next) => {
                 if (err) {
                     res.status(502).json({message: "error while checking user password"});
                 } else if (compareRes) { 
-                    //assignDeviceId(req.body.email, req.body.deviceId);
-                    UserModel.findOneAndUpdate({ email: req.body.email}, {Device_Id: req.body.deviceId}, {new: true}).then((user => {
-                        if (user) {
-                            console.log("Device Id = "+req.body.deviceId)
-                        }
-                    }))
-                    userNotification("Signed In", "Notification Test", req.body.deviceId)
                     const token = jwt.sign({ email: req.body.email }, 'secret', { expiresIn: '1h' });
                     res.status(200).json({message: "user logged in", "token": token, data: {
                         username: user.username,
                         email: user.email,
-                        token: token,
-                        status: user.status
+                        token: token
                     }});
                 } else {
                     res.status(401).json({message: "invalid credentials"});
