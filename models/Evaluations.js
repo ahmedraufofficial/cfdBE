@@ -70,6 +70,9 @@ const EvaluationSchema = new mongoose.Schema({
     Sell_Option: {
         type: String,
     },
+    Last_Updated: {
+        type: String
+    },
     Customer_Information: CustomerInformationSchema,
     Car_Valuation_Details: CarValuationSchema,
     Additional_Information: {

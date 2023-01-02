@@ -29,6 +29,7 @@ const signup = (req, res, next) => {
                         username: req.body.username,
                         number: req.body.number,
                         password: passwordHash,
+                        status: "Inactive"
                     })
                     return User.save()
                     .then(() => {
@@ -68,7 +69,8 @@ const login = (req, res, next) => {
                     res.status(200).json({message: "user logged in", "token": token, data: {
                         username: user.username,
                         email: user.email,
-                        token: token
+                        token: token,
+                        status: user.status
                     }});
                 } else {
                     res.status(401).json({message: "invalid credentials"});
