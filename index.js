@@ -364,8 +364,35 @@ app.get('/inspection/:id', async (req, res) => {
     }
 });
 
+app.put('/last_seen/inspection/:id', async (req, res) => {
+    const update = req.body
+    try {
+        const x = await InspectionsModel.findOneAndUpdate({_id: req.params.id}, update, {new: true})
+        res.send({status: "200"})
+    } catch(err) {
+        res.send({status: "500", error: err})
+    };
+});
 
+app.put('/last_seen/evaluation/:id', async (req, res) => {
+    const update = req.body
+    try {
+        const x = await EvaluationsModel.findOneAndUpdate({_id: req.params.id}, update, {new: true})
+        res.send({status: "200"})
+    } catch(err) {
+        res.send({status: "500", error: err})
+    };
+});
 
+app.put('/last_seen/appointment/:id', async (req, res) => {
+    const update = req.body
+    try {
+        const x = await AppointmentsModel.findOneAndUpdate({_id: req.params.id}, update, {new: true})
+        res.send({status: "200"})
+    } catch(err) {
+        res.send({status: "500", error: err})
+    };
+});
 
 app.post('/api/auth', async (req, res) => {
     
