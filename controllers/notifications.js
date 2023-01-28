@@ -118,7 +118,7 @@ const usersNotificationApi = async (req, res, next) => {
 const userNotificationId = async (req, res, next) => {
     const id = await UserModel.findOne({email: req.body.email})
     if (id) {
-        res.status(200).json({deviceId: id?.Device_Id || ""})
+        res.status(200).json({deviceId: id.Device_Id || ""})
     } else {
         res.status(401).json({message: "Something went wrong"})
     }
@@ -127,7 +127,7 @@ const userNotificationId = async (req, res, next) => {
 const userNotificationUsername = async (req, res, next) => {
     const id = await UserModel.findOne({username: req.body.username})
     if (id) {
-        res.status(200).json({deviceId: id?.Device_Id || ""})
+        res.status(200).json({deviceId: id.Device_Id || ""})
     } else {
         res.status(401).json({deviceId: ""})
     }
