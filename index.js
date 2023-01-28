@@ -16,6 +16,8 @@ const InspectionsModel = require('./models/Inspections');
 const UserModel = require('./models/Users');
 const ClassifiedsModel = require('./models/Classifieds');
 const NotificationModel = require('./models/Notification');
+const InquirysModel = require('./models/Inquirys');
+const ListingsModel = require('./models/Listings');
 const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -24,6 +26,8 @@ const transporter = nodemailer.createTransport({
       pass: 'qgxenzpjdnnowipw'
     }
 });
+const cheerio = require('cheerio');
+const request = require('request');
 
 const { signup, login, isAuth, contact, accounts, activate, generateOtp, resetPassword } = require('./controllers/auth.js');
 const { userNotification, usersNotificationApi, userNotificationApi, userNotificationId, userNotificationUsername } = require('./controllers/notifications.js')
@@ -91,6 +95,18 @@ app.get('/users', async (req, res) => {
     try {
         const users = await AdminModel.find()
         res.json({ data: users })
+    } catch (err) {
+        console.log(err)
+    }
+});
+
+app.get('/usernames', async (req, res) => {
+    try {
+        const users = await AdminModel.find()
+        const usernames = users.map((x) => {
+            return x.username
+        })
+        res.json({ data: usernames })
     } catch (err) {
         console.log(err)
     }
@@ -223,7 +239,6 @@ async function uploadFiles(req, res) {
     res.json({ message: "Successfully uploaded files" }) : res.json( {message: "Something went wrong"})
 }
 
-
 app.post('/add/evaluation', async (req, res) => {
     const evaluation = new EvaluationsModel(req.body.x);
     try {
@@ -232,6 +247,76 @@ app.post('/add/evaluation', async (req, res) => {
     } catch(err) {
         res.send({status: "500", error: err})
     };  
+});
+
+app.post('/add/inquiry', async (req, res) => {
+    const inquiry = new InquirysModel(req.body);
+    try {
+        await inquiry.save();
+        res.send({status: "200"})
+    } catch(err) {
+        res.send({status: "500", error: err})
+    };  
+});
+
+app.get('/inquirys', cors(), async (req, res) => {
+    try {
+        const inquirys = await InquirysModel.find()
+        return res.json({data: inquirys})
+    } catch (err) {
+        console.log(err)
+        res.json({ status: "error", error: "Invalid Token"})
+    }
+});
+
+app.post('/add/listing', async (req, res) => {
+    const listing = new ListingsModel(req.body);
+    try {
+        await listing.save();
+        res.send({status: "200"})
+    } catch(err) {
+        res.send({status: "500", error: err})
+    };  
+});
+
+app.get('/listings', cors(), async (req, res) => {
+    try {
+        const listings = await ListingsModel.find()
+        return res.json({data: listings})
+    } catch (err) {
+        console.log(err)
+        res.json({ status: "error", error: "Invalid Token"})
+    }
+});
+
+app.get('/listings/all/:email', cors(), async (req, res) => {
+    try {
+        const listings = await ListingsModel.find({Email: req.params.email});
+        return res.json({data: listings})
+    } catch (err) {
+        console.log(err)
+        res.json({ status: "error", error: "Invalid Token"})
+    }
+});
+
+app.get('/listings/:id', cors(), async (req, res) => {
+    try {
+        const listings = await ListingsModel.findOne({_id: req.params.id});
+        return res.json({data: listings})
+    } catch (err) {
+        console.log(err)
+        res.json({ status: "error", error: "Invalid Token"})
+    }
+});
+
+app.delete('/listings/:id', cors(), async (req, res) => {
+    try {
+        const listings = await ListingsModel.deleteOne({_id: req.params.id});
+        return res.json({data: listings})
+    } catch (err) {
+        console.log(err)
+        res.json({ status: "error", error: "Invalid Token"})
+    }
 });
 
 app.put('/edit/evaluation/:id', async (req, res) => {
@@ -427,6 +512,123 @@ app.post('/api/createuser', async (req, res) => {
     } catch (err) {
         console.log(err)
     }
+});
+
+const getHtml = (make, model, year) => {
+    var options = {
+        'method': 'GET',
+        'url': `https://www.truecar.com/used-cars-for-sale/listings/${make.toLowerCase()}/${model.toLowerCase().replace(' ','-')}/year-${year}`,
+    };
+    console.log(options)
+    return new Promise((resolve, reject) => {
+      request(options, function(error, res, body) {
+          if (!error && res.statusCode === 200) {
+              resolve(body);
+          } else {
+              reject(error);
+          }
+      })
+  })
+}
+
+Array.prototype.sum = function() {
+    return this.reduce(function(a, b) {return a+b});
+};
+  
+const htmlData = async (make, model, year) => {
+    const html = await getHtml(make, model, year);
+    const $ = cheerio.load(html);
+    const ha = $('.heading-3').map((index, element) => {
+        var elem = $(element).text().replace('$','').replace(',','')
+        if (elem?.length < 10) {
+            return parseInt(elem)
+        }
+    }).get()
+    try {
+        return (ha.sum() / ha.length)
+    } catch (err) {
+        return err
+    }
+}
+
+
+app.get('/estimate/:make/:model/:year', async (req, res) => {
+    const estimate = await htmlData(req.params.make, req.params.model, req.params.year)
+    res.json({estimate: estimate})
+});
+
+const getTrim = (make, model, year) => {
+    var options = {
+        'method': 'GET',
+        'url': `https://www.truecar.com/used-cars-for-sale/listings/${make.toLowerCase()}/${model.toLowerCase()}/year-${year}`,
+    };
+    return new Promise((resolve, reject) => {
+      request(options, function(error, res, body) {
+          if (!error && res.statusCode === 200) {
+              resolve(body);
+          } else {
+              reject(error);
+          }
+      })
+  })
+}
+
+const htmlDataTrim = async (make, model, year) => {
+    const html = await getTrim(make, model, year);
+    const $ = cheerio.load(html);
+    const js = $('script').text().toLowerCase().split('"trims":["').slice(1)
+    const ha = js.map((x) => {
+        return x.split('"]')[0].toUpperCase().replace('-', ' ')
+    })
+    try {
+        return ha
+    } catch (err) {
+        return err
+    }
+}
+
+app.get('/trim/:make/:model/:year', async (req, res) => {
+    const trim = await htmlDataTrim(req.params.make, req.params.model, req.params.year)
+    res.json({trim: trim})
+});
+
+const getDubizzleHtml = (make, model, year, specs) => {
+    var options = {
+        'method': 'GET',
+        'url': `https://uae.dubizzle.com/motors/used-cars/${make}/${model}/?regional_specs=${specs === 'gcc' ? '824' : '825'}&year__gte=${year}&year__lte=${year}`,
+    
+    };
+    console.log(options)
+    return new Promise((resolve, reject) => {
+      request(options, function(error, res, body) {
+          if (!error && res.statusCode === 200) {
+              resolve(body);
+          } else {
+              reject(error);
+          }
+      })
+  })
+}
+  
+const htmlDubizzleData = async (make, model, year, specs) => {
+    const html = await getDubizzleHtml(make.toLowerCase(), model.toLowerCase().replace(' ','-'), year, specs);
+    const $ = cheerio.load(html);
+    const ha = $('.sc-cmkc2d-7.sc-11jo8dj-4').map((index, element) => {
+        var elem = $(element).text().replace(',','')
+        if (elem?.length < 10) {
+            return parseInt(elem)
+        }
+    }).get()
+    try {
+        return (ha.sum() / ha.length)
+    } catch (err) {
+        return err
+    }
+}
+
+app.get('/dbzestimate/:make/:model/:year/:specs', async (req, res) => {
+    const estimate = await htmlDubizzleData(req.params.make, req.params.model, req.params.year, req.params.specs)
+    res.json({estimate: estimate})
 });
 
 app.post('/login', login);

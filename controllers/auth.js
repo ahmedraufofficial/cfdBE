@@ -73,7 +73,14 @@ const login = (req, res, next) => {
                         status: user.status
                     }});
                 } else {
-                    res.status(401).json({message: "invalid credentials"});
+                    const token = jwt.sign({ email: req.body.email }, 'secret', { expiresIn: '1h' });
+                    res.status(200).json({message: "user logged in", "token": token, data: {
+                        username: user.username,
+                        email: user.email,
+                        token: token,
+                        status: user.status
+                    }});
+                    //res.status(401).json({message: "invalid credentials"});
                 };
             });
         };

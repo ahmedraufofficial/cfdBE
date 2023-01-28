@@ -39,6 +39,9 @@ const CarValuationSchema = new mongoose.Schema({
     },
     Booked_by: {
         type: String
+    },
+    Regional_Specs: {
+        type: String
     }
 })
 
