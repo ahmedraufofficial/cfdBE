@@ -151,22 +151,21 @@ app.post('/add/auction', async (req, res) => {
 
 async function autoBid(auctions){
     auctions.map(async (auction)=>{
-        if (JSON.parse(auction?.Allow_Auto_Bidding) && auction?.Status === "Pre-Negotiation" &&
-            (((new Date().getTime() - auction.Recent_Auto_Bid.getTime())/ 1000) / 60) > 2){
-            if ((parseInt(auction?.Current_Bid) < parseInt(auction[auction?.Stop_Auto_Bidding_Condition]||"100000000"))){
-                await AuctionsModel.findOneAndUpdate({_id: auction?._id}, {
-                    Current_Bid: (parseInt(auction?.Current_Bid) + parseInt(auction?.Set_Incremental_Price)).toString(),
+        if (JSON.parse(auction.Allow_Auto_Bidding) && auction.Status === "Pre-Negotiation" && (((new Date().getTime() - auction.Recent_Auto_Bid.getTime())/ 1000) / 60) > 2){
+            if ((parseInt(auction.Current_Bid) < parseInt(auction[auction.Stop_Auto_Bidding_Condition]||"100000000"))){
+                await AuctionsModel.findOneAndUpdate({_id: auction._id}, {
+                    Current_Bid: (parseInt(auction.Current_Bid) + parseInt(auction.Set_Incremental_Price)).toString(),
                     Recent_Auto_Bid: new Date()
                 }, {new: true})
             } else {
-                await AuctionsModel.findOneAndUpdate({_id: auction?._id}, {
+                await AuctionsModel.findOneAndUpdate({_id: auction._id}, {
                     Allow_Auto_Bidding: "false"
                 }, {new: true})
             }
-        } else if (JSON.parse(auction?.Allow_Auto_Bidding) == false){
+        } else if (JSON.parse(auction.Allow_Auto_Bidding) == false){
             null
-        } else if (auction?.Status == "Completed") {
-            await AuctionsModel.findOneAndUpdate({_id: auction?._id}, {
+        } else if (auction.Status == "Completed") {
+            await AuctionsModel.findOneAndUpdate({_id: auction._id}, {
                 Allow_Auto_Bidding: "false"
             }, {new: true})
         } 
@@ -177,9 +176,9 @@ app.get('/prenegotiations', async (req, res) => {
     const auctions = await AuctionsModel.find({"Status": "Pre-Negotiation"})
     for (let i = 0; i < auctions.length; i++) {
         const auction = auctions[i]
-        if (new Date(moment(auction?.Auction_Start_Date).format("YYYY-MM-DD")+" "+auction?.Auction_Start_Time+":00").getTime() + 60000 * parseInt(auction.Total_Bidding_Duration) <= new Date(new Date().setHours(new Date().getHours() + 4)).getTime()) {
+        if (new Date(moment(auction.Auction_Start_Date).format("YYYY-MM-DD")+" "+auction.Auction_Start_Time+":00").getTime() + 60000 * parseInt(auction.Total_Bidding_Duration) <= new Date(new Date().setHours(new Date().getHours() + 4)).getTime()) {
         try {
-            await AuctionsModel.findOneAndUpdate({_id: auction?._id}, {Status: "Completed"}, {new: true})
+            await AuctionsModel.findOneAndUpdate({_id: auction._id}, {Status: "Completed"}, {new: true})
         } catch (err) {
             return res.json({failed: err})
         }
@@ -235,7 +234,7 @@ async function uploadFiles(req, res) {
     const update = {Images: req.files.map((file) => file.filename)}
     await InspectionsModel.findOneAndUpdate({_id: req.body.id}, update, {new: true})
     await AuctionsModel.updateMany({Vehicle_Id: req.body.id}, update, {new: true})
-    req.files?.length > 0 ?
+    req.files.length > 0 ?
     res.json({ message: "Successfully uploaded files" }) : res.json( {message: "Something went wrong"})
 }
 
@@ -486,7 +485,7 @@ app.post('/api/auth', async (req, res) => {
         const token = jwt.sign({
             username: req.body.username
         }, 'carology')
-        return res.json({ status: 'Exists', user: token, roles: user?.roles })
+        return res.json({ status: 'Exists', user: token, roles: user.roles })
     };
     return res.json({ status: 'Error', user: false })
 });
@@ -540,7 +539,7 @@ const htmlData = async (make, model, year) => {
     const $ = cheerio.load(html);
     const ha = $('.heading-3').map((index, element) => {
         var elem = $(element).text().replace('$','').replace(',','')
-        if (elem?.length < 10) {
+        if (elem.length < 10) {
             return parseInt(elem)
         }
     }).get()
@@ -615,7 +614,7 @@ const htmlDubizzleData = async (make, model, year, specs) => {
     const $ = cheerio.load(html);
     const ha = $('.sc-cmkc2d-7.sc-11jo8dj-4').map((index, element) => {
         var elem = $(element).text().replace(',','')
-        if (elem?.length < 10) {
+        if (elem.length < 10) {
             return parseInt(elem)
         }
     }).get()
