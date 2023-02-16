@@ -238,6 +238,15 @@ async function uploadFiles(req, res) {
     res.json({ message: "Successfully uploaded files" }) : res.json( {message: "Something went wrong"})
 }
 
+app.post("/upload_classified_images", upload.array("files",8), uploadClassifiedFiles);
+async function uploadClassifiedFiles(req, res) {
+    const update = {Images: req.files.map((file) => file.filename)}
+    //await ClassifiedsModel.findOneAndUpdate({_id: req.body.id}, update, {new: true})
+    console.log(update)
+    req.files?.length > 0 ?
+    res.json({ message: update }) : res.json( {message: "Something went wrong"})
+}
+
 app.post('/add/evaluation', async (req, res) => {
     const evaluation = new EvaluationsModel(req.body.x);
     try {

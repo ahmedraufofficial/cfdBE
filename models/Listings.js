@@ -27,6 +27,9 @@ const ListingSchema = new mongoose.Schema({
     },
     Price: {
         type: String,
+    },
+    Images: {
+        type: Array,
     }
 });
 
