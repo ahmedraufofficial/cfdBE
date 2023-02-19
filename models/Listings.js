@@ -30,6 +30,9 @@ const ListingSchema = new mongoose.Schema({
     },
     Images: {
         type: Array,
+    },
+    Description: {
+        type: String,
     }
 });
 
